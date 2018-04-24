@@ -14,8 +14,30 @@ from sklearn.metrics import confusion_matrix, classification_report,precision_sc
 plt.style.use('seaborn')
 
 
+def plot_weights_dnn(epochs,weights, X_tr, Y_tr, X_te, Y_te):
+    accs = []
+    recalls = []
+    weights = np.array(weights)
+    for weight in weights:
+        history, recall, predictions = dnn_1024(X_over,Y_over,X_te,Y_te,25,weight, verbose = 0)
+        accs.append(history.history['val_acc'][-1])
+        recalls.append(recall.recalls[-1])
+        
+    plt.plot(weights,np.array(recalls),label='Recall Category 1')
+    plt.plot(weights,np.array(accs),label = 'Accuracy')
+    
+    plt.xlabel('Weight')
+    plt.ylabel('Score')
+    plt.title('Model Statistics by Positive Ouput Weight')
+    
+    plt.legend()
+    plt.show()
+    plt.close()
+    return
+    
+
 # Plots the validation and testing loss/accuracy for a given neural network
-def dnn_plots(history):
+def dnn_plots(history, metrics = False):
     '''
         inputs:
             history: a fitted neural network
@@ -23,6 +45,7 @@ def dnn_plots(history):
     history_dict = history.history
     losses = history_dict['loss']
     val_losses = history_dict['val_loss']
+    val_recalls = metrics.recalls
     acc = history_dict['acc']
     val_acc = history_dict['val_acc']
     epochs = range(1,len(acc)+1)
@@ -44,6 +67,16 @@ def dnn_plots(history):
     plt.legend()
     plt.show()
     plt.clf()
+
+    if metrics:
+        plt.plot(epochs, val_acc, label = 'Validation Accuracy')
+        plt.plot(epochs, val_recalls, label = 'Validation Recall')
+        plt.title('Validation Recall and Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Score')
+        plt.legend()
+        plt.show()
+        plt.clf()
     
     return
 
@@ -104,7 +137,7 @@ def plot_weights(clf, weights, X_tr, Y_tr, X_te, Y_te, recall = False, precision
     return
 
 
-def plot_cs(clf, cs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False):
+def plot_cs(clf, cs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False, acc = False):
     '''
         inputs:
             clf: the classifier function 
@@ -122,6 +155,7 @@ def plot_cs(clf, cs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, 
     recalls_1 = []
     precisions_0 = []
     precisions_1 = []
+    accs = []
     cs = np.array(cs)
     for c in cs:
         clf.C = c
@@ -134,6 +168,7 @@ def plot_cs(clf, cs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, 
         recalls_1.append(recalls[1])
         fscores_0.append(fscores[0])
         fscores_1.append(fscores[1])
+        accs.append((predictions == Y_te).mean())
         clf = clf_placeholder
     if recall:
         plt.plot(cs,np.array(recalls_0),label='Recall Category 0')
@@ -143,7 +178,10 @@ def plot_cs(clf, cs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, 
         plt.plot(cs,np.array(precisions_1),label='Precision Category 1')    
     elif fscore:
         plt.plot(cs,np.array(fscores_0),label='F-Score Category 0')
-        plt.plot(cs,np.array(fscores_1),label='F-Score Category 1')        
+        plt.plot(cs,np.array(fscores_1),label='F-Score Category 1')    
+    elif acc:
+        plt.plot(cutoffs,np.array(recalls_1),label='Recall Category 1')
+        plt.plot(cutoffs,np.array(accs),label='Model Accuracy')   
     else:
         plt.plot(cs,np.array(recalls),label='Recall')
         plt.plot(cs,np.array(precisions),label='Precision')
@@ -160,7 +198,7 @@ def plot_cs(clf, cs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, 
 
 
 # Plots the precision, recall, and fscore for given probability cutoffs
-def plot_cutoffs(clf, cutoffs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False):
+def plot_cutoffs(clf, cutoffs, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False, acc = False):
     '''
         inputs:
             clf: the classifier function 
@@ -175,6 +213,7 @@ def plot_cutoffs(clf, cutoffs, X_tr, Y_tr, X_te, Y_te, recall = False, precision
     fscores_1 = []
     recalls_0 = []
     recalls_1 = []
+    accs = []
     precisions_0 = []
     precisions_1 = []
     cutoffs = np.array(cutoffs)
@@ -189,6 +228,7 @@ def plot_cutoffs(clf, cutoffs, X_tr, Y_tr, X_te, Y_te, recall = False, precision
         recalls_1.append(recalls[1])
         fscores_0.append(fscores[0])
         fscores_1.append(fscores[1])
+        accs.append((predictions == Y_te).mean())
     if recall:
         plt.plot(cutoffs,np.array(recalls_0),label='Recall Category 0')
         plt.plot(cutoffs,np.array(recalls_1),label='Recall Category 1')
@@ -197,7 +237,10 @@ def plot_cutoffs(clf, cutoffs, X_tr, Y_tr, X_te, Y_te, recall = False, precision
         plt.plot(cutoffs,np.array(precisions_1),label='Precision Category 1')    
     elif fscore:
         plt.plot(cutoffs,np.array(fscores_0),label='F-Score Category 0')
-        plt.plot(cutoffs,np.array(fscores_1),label='F-Score Category 1')        
+        plt.plot(cutoffs,np.array(fscores_1),label='F-Score Category 1') 
+    elif acc:
+        plt.plot(cutoffs,np.array(recalls_1),label='Recall Category 1')
+        plt.plot(cutoffs,np.array(accs),label='Model Accuracy')
     else:
         plt.plot(cutoffs,np.array(recalls_1),label='Recall')
         plt.plot(cutoffs,np.array(precisions_1),label='Precision')
@@ -209,7 +252,7 @@ def plot_cutoffs(clf, cutoffs, X_tr, Y_tr, X_te, Y_te, recall = False, precision
     plt.show()
     plt.close()
 
-    return 
+    return
 
 
 # Prints a classification report and plots a confusion matrix
@@ -461,3 +504,174 @@ def plot3d(scatter, output, output_label = False):
 
 
 
+def rfc_n_estimators(estimators, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False, title = False):
+    '''
+        inputs:
+            clf: the classifier function 
+            estimators: the estimators you want to test (list or numpy array)
+            X_tr, Y_tr, X_te, Y_te: numpy arrays which contain the training and testing data
+            recall: bool, will plot recall for each category
+            precision: bool, will plot precision for each category
+            fscore: bool, will plot fscore for each category
+            if all are false will just plot all 3 for output category 1
+    '''
+    clf = RandomForestClassifier()
+    clf_placeholder = clf
+    fscores_0 = []
+    fscores_1 = []
+    recalls_0 = []
+    recalls_1 = []
+    precisions_0 = []
+    precisions_1 = []
+    estimators = np.array(estimators)
+    for estimator in estimators:
+        clf.n_estimators = estimator
+        clf = clf.fit(X_tr,Y_tr)
+        predictions = clf.predict(X_te)
+        recalls,precisions,fscores,support = score(predictions, Y_te)
+        precisions_0.append(precisions[0])
+        precisions_1.append(precisions[1])
+        recalls_0.append(recalls[0])
+        recalls_1.append(recalls[1])
+        fscores_0.append(fscores[0])
+        fscores_1.append(fscores[1])
+        clf = clf_placeholder
+    if recall:
+        plt.plot(estimators,np.array(recalls_0),label='Recall Category 0')
+        plt.plot(estimators,np.array(recalls_1),label='Recall Category 1')
+    elif precision:
+        plt.plot(estimators,np.array(precisions_0),label='Precision Category 0')
+        plt.plot(estimators,np.array(precisions_1),label='Precision Category 1')    
+    elif fscore:
+        plt.plot(estimators,np.array(fscores_0),label='F-Score Category 0')
+        plt.plot(estimators,np.array(fscores_1),label='F-Score Category 1')        
+    else:
+        plt.plot(estimators,np.array(recalls_1),label='Recall')
+        plt.plot(estimators,np.array(precisions_1),label='Precision')
+        plt.plot(estimators,np.array(fscores_1),label='F-Score')
+    plt.xlabel('Estimators')
+    plt.ylabel('Score')
+    if title:
+        plt.title(title)
+    else:
+        plt.title('Model Statistics by Number of Estimators')
+    plt.legend()
+    plt.show()
+    plt.close()
+    return
+
+
+    # Plots the precision, recall, and fscore for given probability hyperparameters
+def rfc_min_samples_split(hyperparameters, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False, title = False):
+    '''
+        inputs:
+            clf: the classifier function 
+            hyperparameters: the hyperparameters you want to test (list or numpy array)
+            X_tr, Y_tr, X_te, Y_te: numpy arrays which contain the training and testing data
+            recall: bool, will plot recall for each category
+            precision: bool, will plot precision for each category
+            fscore: bool, will plot fscore for each category
+            if all are false will just plot all 3 for output category 1
+    '''
+    clf = RandomForestClassifier()
+    clf_placeholder = clf
+    fscores_0 = []
+    fscores_1 = []
+    recalls_0 = []
+    recalls_1 = []
+    precisions_0 = []
+    precisions_1 = []
+    hyperparameters = np.array(hyperparameters)
+    for param in hyperparameters:
+        clf.min_samples_split = param
+        clf = clf.fit(X_tr,Y_tr)
+        predictions = clf.predict(X_te)
+        recalls,precisions,fscores,support = score(predictions, Y_te)
+        precisions_0.append(precisions[0])
+        precisions_1.append(precisions[1])
+        recalls_0.append(recalls[0])
+        recalls_1.append(recalls[1])
+        fscores_0.append(fscores[0])
+        fscores_1.append(fscores[1])
+        clf = clf_placeholder
+    if recall:
+        plt.plot(hyperparameters,np.array(recalls_0),label='Recall Category 0')
+        plt.plot(hyperparameters,np.array(recalls_1),label='Recall Category 1')
+    elif precision:
+        plt.plot(hyperparameters,np.array(precisions_0),label='Precision Category 0')
+        plt.plot(hyperparameters,np.array(precisions_1),label='Precision Category 1')    
+    elif fscore:
+        plt.plot(hyperparameters,np.array(fscores_0),label='F-Score Category 0')
+        plt.plot(hyperparameters,np.array(fscores_1),label='F-Score Category 1')        
+    else:
+        plt.plot(hyperparameters,np.array(recalls_1),label='Recall')
+        plt.plot(hyperparameters,np.array(precisions_1),label='Precision')
+        plt.plot(hyperparameters,np.array(fscores_1),label='F-Score')
+    plt.xlabel('Split')
+    plt.ylabel('Score')
+    if title:
+        plt.title(title)
+    else:
+        plt.title('Model Statistics by Minimum Samples to Split Branch')
+    plt.legend()
+    plt.show()
+    plt.close()
+    return
+
+
+    # Plots the precision, recall, and fscore for given probability hyperparameters
+def rfc_min_samples_leaf(hyperparameters, X_tr, Y_tr, X_te, Y_te, recall = False, precision = False, fscore = False, title = False):
+    '''
+        inputs:
+            clf: the classifier function 
+            hyperparameters: the hyperparameters you want to test (list or numpy array)
+            X_tr, Y_tr, X_te, Y_te: numpy arrays which contain the training and testing data
+            recall: bool, will plot recall for each category
+            precision: bool, will plot precision for each category
+            fscore: bool, will plot fscore for each category
+            if all are false will just plot all 3 for output category 1
+    '''
+    clf = RandomForestClassifier()
+    clf_placeholder = clf
+    fscores_0 = []
+    fscores_1 = []
+    recalls_0 = []
+    recalls_1 = []
+    precisions_0 = []
+    precisions_1 = []
+    hyperparameters = np.array(hyperparameters).astype(int)
+    for param in hyperparameters:
+        clf.min_samples_leaf = param
+        clf = clf.fit(X_tr,Y_tr)
+        predictions = clf.predict(X_te)
+        recalls,precisions,fscores,support = score(predictions, Y_te)
+        precisions_0.append(precisions[0])
+        precisions_1.append(precisions[1])
+        recalls_0.append(recalls[0])
+        recalls_1.append(recalls[1])
+        fscores_0.append(fscores[0])
+        fscores_1.append(fscores[1])
+        clf = clf_placeholder
+    if recall:
+        plt.plot(hyperparameters,np.array(recalls_0),label='Recall Category 0')
+        plt.plot(hyperparameters,np.array(recalls_1),label='Recall Category 1')
+    elif precision:
+        plt.plot(hyperparameters,np.array(precisions_0),label='Precision Category 0')
+        plt.plot(hyperparameters,np.array(precisions_1),label='Precision Category 1')    
+    elif fscore:
+        plt.plot(hyperparameters,np.array(fscores_0),label='F-Score Category 0')
+        plt.plot(hyperparameters,np.array(fscores_1),label='F-Score Category 1')        
+    else:
+        plt.plot(hyperparameters,np.array(recalls_1),label='Recall')
+        plt.plot(hyperparameters,np.array(precisions_1),label='Precision')
+        plt.plot(hyperparameters,np.array(fscores_1),label='F-Score')
+    plt.xlabel('Samples')
+    plt.ylabel('Score')
+    if title:
+        plt.title(title)
+    else:
+        plt.title('Model statistics by Minimum Samples per Leaf')
+    plt.legend()
+    plt.show()
+    plt.close()
+    return
