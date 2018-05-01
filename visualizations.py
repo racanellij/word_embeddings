@@ -9,6 +9,13 @@ import plotly.plotly as py
 from mpl_toolkits.mplot3d import Axes3D
 import itertools
 from sklearn.metrics import confusion_matrix, classification_report,precision_score, precision_recall_fscore_support as score
+from sklearn.ensemble import RandomForestClassifier
+import keras
+from keras import models
+from keras import layers
+from keras.utils.np_utils import to_categorical  
+import keras.backend as K
+from keras.callbacks import Callback
 
 # personal preference
 plt.style.use('seaborn')
